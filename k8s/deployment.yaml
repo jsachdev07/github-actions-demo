@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: abc-tech-deployment
+  name: abc-tech
   labels:
     app: abc-tech
 spec:
@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: abc-tech
-          image: jsachdev07/abc_tech:${BUILD_NUMBER}   # placeholder for Jenkins build number
+          image: "${IMAGE_NAME}:${IMAGE_TAG}"   # important: quoted
           ports:
             - containerPort: 8080
