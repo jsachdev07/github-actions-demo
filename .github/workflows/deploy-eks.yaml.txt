@@ -1,0 +1,63 @@
+name: Deploy to EKS
+
+on:
+  workflow_run:
+    workflows: ["Docker Build and Push"]
+    types:
+      - completed
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    # Auto-run only when Docker workflow succeeded on main;
+    # also allow manual runs via workflow_dispatch
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ap-south-1
+      CLUSTER_NAME: demo-cluster
+      IMAGE_NAME: jsachdev07/abc_tech
+      # Use the run_number of the Docker workflow so the tag matches
+      IMAGE_TAG: ${{ github.event.workflow_run.run_number }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl and envsubst
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y kubectl gettext-base
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
+
+      - name: Render deployment manifest with image tag
+        run: |
+          export IMAGE_NAME=$IMAGE_NAME
+          export IMAGE_TAG=$IMAGE_TAG
+          envsubst < k8s/deployment.yaml > k8s/deployment-final.yaml
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/deployment-final.yaml
+          kubectl apply -f k8s/service.yaml
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -o wide
+          kubectl get svc -o wide
