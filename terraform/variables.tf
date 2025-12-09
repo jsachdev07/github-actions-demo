@@ -37,5 +37,3 @@ variable "min_size" {
   description = "Min nodes in the node group"
   default     = 1
 }
-
-
