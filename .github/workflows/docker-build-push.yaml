@@ -2,16 +2,20 @@ name: Docker Build and Push
 
 on:
   workflow_run:
-    workflows: ["Java Maven Build"]
+    workflows: ["Java Maven Build"]   # 👈 must match the `name:` of your build workflow
     types:
       - completed
 
-  # Optional manual trigger
   workflow_dispatch:
+
+permissions:
+  actions: read      # 👈 required to read artifacts from another workflow run
+  contents: read
 
 jobs:
   build-and-push:
-    # Run automatically only if the build workflow succeeded AND the branch is main
+    # Run automatically only if the build workflow succeeded on main,
+    # or anytime for manual dispatch
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
@@ -22,18 +26,20 @@ jobs:
 
     env:
       IMAGE_NAME: jsachdev07/abc_tech
-      # Similar idea to Jenkins BUILD_NUMBER; you could also use the commit SHA
       IMAGE_TAG: ${{ github.run_number }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download WAR artifact
+      - name: Download WAR artifact from Build workflow
         uses: actions/download-artifact@v4
         with:
-          name: abc-tech-war
-          path: .
+          name: abc-tech-war                      # 👈 artifact name
+          run-id: ${{ github.event.workflow_run.id }}  # 👈 run-id of *build* workflow
+
+      - name: List downloaded files (debug)
+        run: ls -R
 
       - name: Prepare WAR for Docker build
         run: mv ABCtechnologies-1.0.war abc_tech.war
