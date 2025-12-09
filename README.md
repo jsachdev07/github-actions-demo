@@ -1,5 +1,5 @@
 # abctechnologies code
-The code base contains following files
+The code base contains following files:
 
 - Java code
 - Dockerfile
