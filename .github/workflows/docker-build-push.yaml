@@ -37,7 +37,7 @@ jobs:
         with:
           name: abc-tech-war
           run-id: ${{ github.event.workflow_run.id }}   # run that uploaded artifact
-          github-token: ${{ secrets.GITHUB_TOKEN }}      # THIS is the missing piece
+          #github-token: ${{ secrets.GITHUB_TOKEN }}      # THIS is the missing piece
 
       - name: List downloaded files (debug)
         run: ls -R
